@@ -27,5 +27,10 @@ public sealed class StatusProvider(IComponentProbe components, IPowerController 
     }
 
     private static AgentStatus Empty() => new(true, 1, AgentConstants.Version, new("online", Environment.MachineName, Environment.TickCount64 / 1000), new(RuntimeInformation.OSDescription, false), new(false, false), new(false, false), new(true, false));
-    private static bool IsWorkstationLocked() => !System.Diagnostics.Process.GetProcessesByName("LogonUI").AsSpan().IsEmpty;
+    private static bool IsWorkstationLocked()
+    {
+        var processes = System.Diagnostics.Process.GetProcessesByName("LogonUI");
+        try { return processes.Length > 0; }
+        finally { foreach (var process in processes) process.Dispose(); }
+    }
 }

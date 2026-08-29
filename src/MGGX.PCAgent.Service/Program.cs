@@ -22,7 +22,8 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseWindowsService(options => options.ServiceName = AgentConstants.DisplayName).UseSerilog();
-    builder.WebHost.UseUrls($"http://0.0.0.0:{config.Port}");
+    if (!builder.Environment.IsEnvironment("Testing"))
+        builder.WebHost.UseUrls($"http://0.0.0.0:{config.Port}");
     builder.Services.AddSingleton(config);
     builder.Services.AddSingleton<ITokenStore>(_ => new DpapiTokenStore(dataDirectory));
     builder.Services.AddSingleton<IPowerController, WindowsPowerController>();

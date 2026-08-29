@@ -1,0 +1,46 @@
+name: Build, test and package
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+      - name: Restore, build, test, publish and package
+        shell: pwsh
+        run: ./scripts/build.ps1
+      - name: Smoke-test installed service
+        shell: pwsh
+        run: ./scripts/smoke-test.ps1 -Installer ./artifacts/MGGX-PC-Agent-Setup-x64.exe
+      - name: Upload installer and portable package
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGGX-PC-Agent-1.0.0-x64
+          path: |
+            artifacts/MGGX-PC-Agent-Setup-x64.exe
+            artifacts/MGGX-PC-Agent-portable-x64.zip
+            artifacts/SHA256SUMS.txt
+          if-no-files-found: error
+      - name: Publish GitHub release assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/MGGX-PC-Agent-Setup-x64.exe
+            artifacts/MGGX-PC-Agent-portable-x64.zip
+            artifacts/SHA256SUMS.txt

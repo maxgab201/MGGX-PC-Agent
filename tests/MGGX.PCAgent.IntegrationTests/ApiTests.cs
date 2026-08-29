@@ -48,14 +48,20 @@ public sealed class ApiTests : IClassFixture<AgentFactory>
 
     [Fact] public async Task Rate_limiting_returns_429()
     {
-        using var factory = new AgentFactory(); using var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AgentFactory.Token);
+        using var requestClient = new HttpClient(new PassThroughHandler(_client)) { BaseAddress = _client.BaseAddress };
+        requestClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AgentFactory.Token);
+        requestClient.DefaultRequestHeaders.Add("X-Test-Client-Id", Guid.NewGuid().ToString("N"));
         HttpResponseMessage? last = null;
-        for (var i = 0; i < 35; i++) last = await client.GetAsync("/api/v1/status");
+        for (var i = 0; i < 35; i++) last = await requestClient.GetAsync("/api/v1/status");
         Assert.Equal(HttpStatusCode.TooManyRequests, last!.StatusCode);
     }
 
     private void Authenticate() => _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AgentFactory.Token);
+
+    private sealed class PassThroughHandler(HttpClient client) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => client.SendAsync(request, cancellationToken);
+    }
 }
 
 public sealed class AgentFactory : WebApplicationFactory<Program>

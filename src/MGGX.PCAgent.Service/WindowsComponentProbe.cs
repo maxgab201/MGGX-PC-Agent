@@ -55,7 +55,7 @@ public sealed class WindowsComponentProbe : IComponentProbe
     {
         var until = DateTime.UtcNow.AddSeconds(20);
         while (DateTime.UtcNow < until) { ct.ThrowIfCancellationRequested(); sc.Refresh(); if (sc.Status == status) return; await Task.Delay(250, ct); }
-        throw new TimeoutException("Service state change timed out.");
+        throw new System.TimeoutException("Service state change timed out.");
     }
 
     private static string? FindSunshineExecutable()

@@ -47,6 +47,7 @@ try
     });
 
     var app = builder.Build();
+    _ = app.Services.GetRequiredService<ITokenStore>().GetOrCreate();
     foreach (var warning in bootstrapWarnings) app.Logger.LogWarning("{Warning}", warning);
 
     app.Use(async (context, next) =>

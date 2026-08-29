@@ -2,6 +2,7 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using MGGX.PCAgent.Core;
 using MGGX.PCAgent.Service;
+using Xunit;
 
 namespace MGGX.PCAgent.Tests;
 

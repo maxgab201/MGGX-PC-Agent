@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.ServiceProcess;
+using MGGX.PCAgent.Core;
 
 namespace MGGX.PCAgent.Service;
 

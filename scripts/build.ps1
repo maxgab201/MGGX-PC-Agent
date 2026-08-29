@@ -3,7 +3,7 @@ $PSNativeCommandUseErrorActionPreference = $true
 $root = Split-Path -Parent $PSScriptRoot
 $artifacts = Join-Path $root 'artifacts'
 dotnet restore (Join-Path $root 'MGGX-PC-Agent.sln')
-dotnet build (Join-Path $root 'MGGX-PC-Agent.sln') -c Release --no-restore
+msbuild (Join-Path $root 'MGGX-PC-Agent.sln') /m /p:Configuration=Release /p:RestoreIgnoreFailedSources=false
 dotnet test (Join-Path $root 'MGGX-PC-Agent.sln') -c Release --no-build --logger "trx;LogFileName=tests.trx"
 dotnet publish (Join-Path $root 'src/MGGX.PCAgent.Service/MGGX.PCAgent.Service.csproj') -c Release -r win-x64 --self-contained true -o (Join-Path $artifacts 'publish/service')
 dotnet publish (Join-Path $root 'src/MGGX.PCAgent.Control/MGGX.PCAgent.Control.csproj') -c Release -r win-x64 --self-contained true -o (Join-Path $artifacts 'publish/control')

@@ -34,8 +34,13 @@ try
     builder.Services.AddHostedService(sp => sp.GetRequiredService<StatusProvider>());
     builder.Services.AddHostedService<DiscoveryService>();
     builder.Services.AddRateLimiter(options => options.AddPolicy("api", http =>
-        RateLimitPartition.GetFixedWindowLimiter(http.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ =>
-            new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 })));
+    {
+        var environment = http.RequestServices.GetRequiredService<IHostEnvironment>();
+        var testId = environment.IsEnvironment("Testing") ? http.Request.Headers["X-Test-Client-Id"].ToString() : string.Empty;
+        var partition = string.IsNullOrEmpty(testId) ? http.Connection.RemoteIpAddress?.ToString() ?? "unknown" : $"test:{testId}";
+        return RateLimitPartition.GetFixedWindowLimiter(partition, _ =>
+            new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 });
+    }));
 
     var app = builder.Build();
     foreach (var warning in bootstrapWarnings) app.Logger.LogWarning("{Warning}", warning);

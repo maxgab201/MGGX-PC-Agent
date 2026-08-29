@@ -48,20 +48,19 @@ public sealed class ApiTests : IClassFixture<AgentFactory>
 
     [Fact] public async Task Rate_limiting_returns_429()
     {
-        using var requestClient = new HttpClient(new PassThroughHandler(_client)) { BaseAddress = _client.BaseAddress };
-        requestClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AgentFactory.Token);
-        requestClient.DefaultRequestHeaders.Add("X-Test-Client-Id", Guid.NewGuid().ToString("N"));
-        HttpResponseMessage? last = null;
-        for (var i = 0; i < 35; i++) last = await requestClient.GetAsync("/api/v1/status");
-        Assert.Equal(HttpStatusCode.TooManyRequests, last!.StatusCode);
+        Authenticate();
+        _client.DefaultRequestHeaders.Add("X-Test-Client-Id", Guid.NewGuid().ToString("N"));
+        try
+        {
+            HttpResponseMessage? last = null;
+            for (var i = 0; i < 35; i++) last = await _client.GetAsync("/api/v1/status");
+            Assert.Equal(HttpStatusCode.TooManyRequests, last!.StatusCode);
+        }
+        finally { _client.DefaultRequestHeaders.Remove("X-Test-Client-Id"); }
     }
 
     private void Authenticate() => _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AgentFactory.Token);
 
-    private sealed class PassThroughHandler(HttpClient client) : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => client.SendAsync(request, cancellationToken);
-    }
 }
 
 public sealed class AgentFactory : WebApplicationFactory<Program>

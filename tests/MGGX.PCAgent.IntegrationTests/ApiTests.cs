@@ -59,6 +59,27 @@ public sealed class ApiTests : IClassFixture<AgentFactory>
         finally { _client.DefaultRequestHeaders.Remove("X-Test-Client-Id"); }
     }
 
+    [Fact] public async Task Rate_limiting_is_partitioned_by_client()
+    {
+        Authenticate();
+        var clientId1 = "partition-test-client-1";
+        var clientId2 = "partition-test-client-2";
+
+        // Client 1 exhausts its limit
+        _client.DefaultRequestHeaders.Add("X-Test-Client-Id", clientId1);
+        HttpResponseMessage? last = null;
+        for (var i = 0; i < 35; i++) last = await _client.GetAsync("/api/v1/status");
+        Assert.Equal(HttpStatusCode.TooManyRequests, last!.StatusCode);
+
+        // Client 2 should still have access (different partition)
+        _client.DefaultRequestHeaders.Remove("X-Test-Client-Id");
+        _client.DefaultRequestHeaders.Add("X-Test-Client-Id", clientId2);
+        var response2 = await _client.GetAsync("/api/v1/status");
+        Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
+
+        _client.DefaultRequestHeaders.Remove("X-Test-Client-Id");
+    }
+
     private void Authenticate() => _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AgentFactory.Token);
 
 }

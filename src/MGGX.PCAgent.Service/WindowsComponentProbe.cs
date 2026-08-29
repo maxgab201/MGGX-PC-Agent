@@ -60,7 +60,11 @@ public sealed class WindowsComponentProbe : IComponentProbe
 
     private static string? FindSunshineExecutable()
     {
-        var paths = new[] { Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Sunshine", "sunshine.exe"), Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Sunshine", "sunshine.exe") };
+        var paths = new[]
+        {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Sunshine", "sunshine.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Sunshine", "sunshine.exe")
+        };
         return paths.FirstOrDefault(File.Exists);
     }
 

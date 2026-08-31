@@ -48,7 +48,13 @@ public partial class App : Application
             File.AppendAllText(Path.Combine(logDir, "control-crash.log"), $"{DateTimeOffset.UtcNow:O} {ex}\n\n");
         }
         catch { /* logging is best-effort; still show the dialog below */ }
-        MessageBox(IntPtr.Zero, LogSanitizer.Sanitize($"MGGX PC Agent could not start:\n\n{ex.Message}"), "MGGX PC Agent — Error", 0x10);
+
+        // XamlParseException.Message is typically just "XAML parsing failed."; the actual cause is in
+        // the InnerException chain (missing resource, native load failure, etc.), so surface all of it.
+        var causes = new List<string>();
+        for (var current = ex; current is not null; current = current.InnerException)
+            causes.Add($"{current.GetType().Name}: {current.Message}");
+        MessageBox(IntPtr.Zero, LogSanitizer.Sanitize($"MGGX PC Agent could not start:\n\n{string.Join("\n\n", causes)}"), "MGGX PC Agent — Error", 0x10);
     }
 
     public static void LaunchElevated(string argument)

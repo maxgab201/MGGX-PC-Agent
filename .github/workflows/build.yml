@@ -31,7 +31,7 @@ jobs:
       - name: Upload installer and portable package
         uses: actions/upload-artifact@v4
         with:
-          name: MGGX-PC-Agent-1.0.0-x64
+          name: MGGX-PC-Agent-1.1.0-x64
           path: |
             artifacts/MGGX-PC-Agent-Setup-x64.exe
             artifacts/MGGX-PC-Agent-portable-x64.zip

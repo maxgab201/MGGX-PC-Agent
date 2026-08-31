@@ -1,5 +1,5 @@
 #define MyAppName "MGGX PC Agent"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "MGGX Games"
 #define MyServiceName "MGGXPCAgent"
 
@@ -18,6 +18,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 WizardStyle=modern
+SetupIconFile=..\assets\icon\mggx-pc-agent.ico
 UninstallDisplayIcon={app}\Control\MGGX.PCAgent.exe
 CloseApplications=yes
 RestartApplications=no

@@ -23,7 +23,13 @@ public sealed class DiscoveryService(AgentConfig config, ILogger<DiscoveryServic
                 await udp.SendAsync(response, request.RemoteEndPoint, ct);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
-            catch (Exception ex) { logger.LogWarning(ex, "Discovery request failed"); }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Discovery request failed");
+                // A persistently broken socket (e.g. no UDP support in a sandboxed environment) must not
+                // spin the loop at full CPU; back off between retries instead.
+                try { await Task.Delay(TimeSpan.FromSeconds(1), ct); } catch (OperationCanceledException) { }
+            }
         }
     }
 }

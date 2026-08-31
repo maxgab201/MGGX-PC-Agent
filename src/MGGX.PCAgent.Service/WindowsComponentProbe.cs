@@ -1,13 +1,10 @@
 using System.Diagnostics;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using System.ServiceProcess;
 using MGGX.PCAgent.Core;
 
 namespace MGGX.PCAgent.Service;
 
-public sealed class WindowsComponentProbe : IComponentProbe
+public sealed class WindowsComponentProbe(INetworkInfoProvider network, AgentConfig config) : IComponentProbe
 {
     private static readonly string[] SunshineServices = ["SunshineService", "sunshine"];
 
@@ -28,7 +25,7 @@ public sealed class WindowsComponentProbe : IComponentProbe
         var installed = false; var running = false;
         try { using var sc = new ServiceController("Tailscale"); installed = true; running = sc.Status == ServiceControllerStatus.Running; }
         catch (InvalidOperationException) { }
-        var ip = running ? FindTailscaleIp() : null;
+        var ip = running ? network.GetSnapshot(config.LanAdapterId).TailscaleIp : null;
         return Task.FromResult(new ComponentStatus(installed, running, ip));
     }
 
@@ -66,13 +63,5 @@ public sealed class WindowsComponentProbe : IComponentProbe
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Sunshine", "sunshine.exe")
         };
         return paths.FirstOrDefault(File.Exists);
-    }
-
-    private static string? FindTailscaleIp()
-    {
-        foreach (var nic in NetworkInterface.GetAllNetworkInterfaces().Where(n => n.OperationalStatus == OperationalStatus.Up))
-            foreach (var address in nic.GetIPProperties().UnicastAddresses.Select(x => x.Address).Where(x => x.AddressFamily == AddressFamily.InterNetwork))
-            { var b = address.GetAddressBytes(); if (b[0] == 100 && b[1] >= 64 && b[1] <= 127) return address.ToString(); }
-        return null;
     }
 }

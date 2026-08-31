@@ -5,6 +5,18 @@ using System.Text;
 
 namespace MGGX.PCAgent.Core;
 
+/// <summary>Cryptographically random secrets shared by the legacy token, paired credentials, and pairing offers.</summary>
+public static class SecretGenerator
+{
+    /// <summary>256-bit secret, Base64URL without padding: 43 characters, matching the Android pairing contract.</summary>
+    public static string NewToken() => Base64Url(RandomNumberGenerator.GetBytes(32));
+
+    public static string Base64Url(byte[] value) => Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+    /// <summary>Six-digit human verification code. Never sufficient authentication by itself.</summary>
+    public static string NewDisplayCode() => (RandomNumberGenerator.GetInt32(0, 1_000_000)).ToString("D6");
+}
+
 public interface ITokenStore { string GetOrCreate(); }
 
 public sealed class DpapiTokenStore(string directory) : ITokenStore
@@ -18,14 +30,12 @@ public sealed class DpapiTokenStore(string directory) : ITokenStore
         if (File.Exists(_path))
             return Encoding.UTF8.GetString(ProtectedData.Unprotect(File.ReadAllBytes(_path), Entropy, DataProtectionScope.LocalMachine));
 
-        var token = Base64Url(RandomNumberGenerator.GetBytes(32));
+        var token = SecretGenerator.NewToken();
         var protectedBytes = ProtectedData.Protect(Encoding.UTF8.GetBytes(token), Entropy, DataProtectionScope.LocalMachine);
         File.WriteAllBytes(_path, protectedBytes);
         RestrictAcl(_path);
         return token;
     }
-
-    private static string Base64Url(byte[] value) => Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
     private static void RestrictAcl(string path)
     {

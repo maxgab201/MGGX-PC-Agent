@@ -60,10 +60,11 @@ public partial class App : Application
                     }
                     MessageBox(IntPtr.Zero, "Health and authenticated status tests passed.", "MGGX PC Agent", 0x40); break;
                 case "--set-config":
-                    if (args.Length != 3 || !int.TryParse(args[1], out var port) || port is < 1 or > 65535 || !bool.TryParse(args[2], out var discovery))
+                    if (args.Length != 4 || !int.TryParse(args[1], out var port) || port is < 1 or > 65535 || !bool.TryParse(args[2], out var discovery))
                         throw new ArgumentException("Invalid port or discovery value.");
                     var updated = AgentConfigLoader.Load(AgentConstants.DataDirectory);
                     updated.Port = port; updated.DiscoveryEnabled = discovery;
+                    updated.LanAdapterId = args[3] == "-" ? null : args[3];
                     File.WriteAllText(Path.Combine(AgentConstants.DataDirectory, "config.json"), JsonSerializer.Serialize(updated, new JsonSerializerOptions { WriteIndented = true }));
                     await RunHiddenAsync("netsh.exe", $"advfirewall firewall set rule name=\"MGGX PC Agent API - Private LAN\" new localport={port}");
                     await RunHiddenAsync("netsh.exe", $"advfirewall firewall set rule name=\"MGGX PC Agent API - Tailscale\" new localport={port}");

@@ -3,7 +3,7 @@ using MGGX.PCAgent.Core;
 
 namespace MGGX.PCAgent.Service;
 
-public sealed class StatusProvider(IComponentProbe components, IPowerController power, TimeProvider clock) : BackgroundService, IStatusProvider
+public sealed class StatusProvider(IComponentProbe components, IPowerController power, INetworkInfoProvider network, AgentConfig config, TimeProvider clock) : BackgroundService, IStatusProvider
 {
     public AgentStatus Current { get; private set; } = Empty();
 
@@ -11,10 +11,11 @@ public sealed class StatusProvider(IComponentProbe components, IPowerController 
     {
         var sunshine = await components.GetSunshineAsync(ct);
         var tailscale = await components.GetTailscaleAsync(ct);
+        var lanIp = network.GetSnapshot(config.LanAdapterId).LanIp;
         Current = new(true, 1, AgentConstants.Version,
             new("online", Environment.MachineName, Environment.TickCount64 / 1000),
             new(RuntimeInformation.OSDescription, IsWorkstationLocked()), sunshine, tailscale,
-            new(power.SleepSupported, power.HibernateSupported));
+            new(power.SleepSupported, power.HibernateSupported), lanIp);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

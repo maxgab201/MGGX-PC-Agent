@@ -15,8 +15,11 @@ public sealed class WindowsPowerController : IPowerController
 
     public Task LockAsync(CancellationToken ct)
     {
-        // tsdiscon disconnects the active console session and requires credentials to resume.
-        return RunAsync(Path.Combine(Environment.SystemDirectory, "tsdiscon.exe"), "console", ct);
+        var sessionId = WTSGetActiveConsoleSessionId();
+        if (sessionId == 0xFFFFFFFF) throw new InvalidOperationException("No active console session to lock.");
+        if (!WTSDisconnectSession(WTS_CURRENT_SERVER_HANDLE, sessionId, false))
+            throw new InvalidOperationException($"Windows rejected the lock request (Win32 error {Marshal.GetLastWin32Error()}).");
+        return Task.CompletedTask;
     }
 
     private static Task SuspendAsync(bool hibernate)
@@ -35,6 +38,11 @@ public sealed class WindowsPowerController : IPowerController
 
     [DllImport("powrprof.dll", SetLastError = true)] private static extern bool SetSuspendState(bool hibernate, bool forceCritical, bool disableWakeEvent);
     [DllImport("powrprof.dll", SetLastError = true)] private static extern bool GetPwrCapabilities(out SystemPowerCapabilities capabilities);
+
+    private static readonly IntPtr WTS_CURRENT_SERVER_HANDLE = IntPtr.Zero;
+    [DllImport("kernel32.dll")] private static extern uint WTSGetActiveConsoleSessionId();
+    [DllImport("wtsapi32.dll", SetLastError = true)]
+    private static extern bool WTSDisconnectSession(IntPtr hServer, uint sessionId, [MarshalAs(UnmanagedType.Bool)] bool bWait);
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     private struct SystemPowerCapabilities

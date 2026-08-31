@@ -49,7 +49,7 @@ public sealed class CoreTests : IDisposable
     [Theory] [InlineData(true, true)] [InlineData(false, false)]
     public async Task Status_reflects_component_running_states(bool sunshineRunning, bool tailscaleRunning)
     {
-        var provider = new StatusProvider(new FakeComponents(sunshineRunning, tailscaleRunning), new FakePower(), TimeProvider.System);
+        var provider = new StatusProvider(new FakeComponents(sunshineRunning, tailscaleRunning), new FakePower(), new FakeNetwork(), new AgentConfig(), TimeProvider.System);
         await provider.RefreshAsync(default);
         Assert.Equal(sunshineRunning, provider.Current.Sunshine.Running);
         Assert.Equal(tailscaleRunning, provider.Current.Tailscale.Running);
@@ -69,5 +69,9 @@ public sealed class CoreTests : IDisposable
         public Task ShutdownAsync(CancellationToken ct) => Task.CompletedTask; public Task RestartAsync(CancellationToken ct) => Task.CompletedTask;
         public Task SleepAsync(CancellationToken ct) => Task.CompletedTask; public Task HibernateAsync(CancellationToken ct) => Task.CompletedTask;
         public Task LockAsync(CancellationToken ct) => Task.CompletedTask;
+    }
+    private sealed class FakeNetwork : INetworkInfoProvider
+    {
+        public NetworkSnapshot GetSnapshot(string? manualAdapterId) => new("192.168.1.20", "192.168.1.255", "AA:BB:CC:DD:EE:FF", "Ethernet", null, []);
     }
 }

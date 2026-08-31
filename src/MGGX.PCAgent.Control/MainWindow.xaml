@@ -1,34 +1,77 @@
 <Window x:Class="MGGX.PCAgent.Control.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <ScrollViewer><StackPanel Padding="28" Spacing="14" MaxWidth="620" HorizontalAlignment="Center">
-    <TextBlock Text="MGGX PC Agent" FontSize="30" FontWeight="SemiBold" />
-    <TextBlock x:Name="OnlineText" Text="● Checking Agent…" FontSize="18" />
-    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="12" Padding="18">
-      <Grid ColumnSpacing="24" RowSpacing="12">
-        <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-        <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
-        <TextBlock Text="Service"/><TextBlock x:Name="ServiceText" Grid.Column="1"/>
-        <TextBlock Text="API" Grid.Row="1"/><TextBlock x:Name="ApiText" Grid.Row="1" Grid.Column="1"/>
-        <TextBlock Text="Tailscale" Grid.Row="2"/><TextBlock x:Name="TailscaleText" Grid.Row="2" Grid.Column="1"/>
-        <TextBlock Text="Sunshine" Grid.Row="3"/><TextBlock x:Name="SunshineText" Grid.Row="3" Grid.Column="1"/>
-        <TextBlock Text="Windows uptime" Grid.Row="4"/><TextBlock x:Name="UptimeText" Grid.Row="4" Grid.Column="1"/>
-      </Grid>
-    </Border>
-    <Grid ColumnSpacing="10"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
-      <Button Content="COPY AGENT TOKEN" HorizontalAlignment="Stretch" Click="CopyToken_Click"/>
-      <Button Grid.Column="1" Content="TEST AGENT" HorizontalAlignment="Stretch" Click="TestAgent_Click"/>
-    </Grid>
-    <Grid ColumnSpacing="10"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
-      <Button Content="RESTART SERVICE" HorizontalAlignment="Stretch" Click="Restart_Click"/>
-      <Button Grid.Column="1" Content="OPEN LOGS" HorizontalAlignment="Stretch" Click="OpenLogs_Click"/>
-    </Grid>
-    <CheckBox Content="Start automatically with Windows" IsChecked="True" IsEnabled="False"/>
-    <Expander Header="Configuration">
-      <StackPanel Spacing="10" Padding="0,10,0,0">
-        <NumberBox x:Name="PortBox" Header="API port" Minimum="1" Maximum="65535" SpinButtonPlacementMode="Inline"/>
-        <CheckBox x:Name="DiscoveryCheck" Content="Enable LAN discovery (UDP 8767)"/>
-        <Button Content="SAVE CONFIGURATION" Click="SaveConfig_Click"/>
+  <Grid>
+    <ScrollViewer x:Name="MainScroll">
+      <StackPanel Padding="28" Spacing="14" MaxWidth="640" HorizontalAlignment="Center">
+        <TextBlock Text="MGGX PC Agent" FontSize="30" FontWeight="SemiBold" />
+        <TextBlock x:Name="OnlineText" Text="● Checking Agent…" FontSize="18" />
+
+        <InfoBar x:Name="FirstRunGuide" IsOpen="False" IsClosable="True" Severity="Informational" Title="Primeros pasos"
+                 Message="1) Instalá y configurá Tailscale. 2) Instalá y configurá Sunshine. 3) Tocá 'Vincular celular de casa' y escaneá el QR desde MGGX PC Control 2." />
+
+        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="12" Padding="18">
+          <Grid ColumnSpacing="24" RowSpacing="12">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+            <TextBlock Text="Service"/><TextBlock x:Name="ServiceText" Grid.Column="1"/>
+            <TextBlock Text="LAN" Grid.Row="1"/><TextBlock x:Name="LanText" Grid.Row="1" Grid.Column="1"/>
+            <TextBlock Text="Tailscale" Grid.Row="2"/><TextBlock x:Name="TailscaleText" Grid.Row="2" Grid.Column="1"/>
+            <TextBlock Text="Sunshine" Grid.Row="3"/><TextBlock x:Name="SunshineText" Grid.Row="3" Grid.Column="1"/>
+            <TextBlock Text="Agent" Grid.Row="4"/><TextBlock x:Name="AgentVersionText" Grid.Row="4" Grid.Column="1"/>
+          </Grid>
+        </Border>
+
+        <Button x:Name="PairButton" Content="VINCULAR CELULAR DE CASA" HorizontalAlignment="Stretch" Click="PairButton_Click" Style="{StaticResource AccentButtonStyle}"/>
+
+        <Grid ColumnSpacing="10"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+          <Button Content="PROBAR AGENT" HorizontalAlignment="Stretch" Click="TestAgent_Click"/>
+          <Button Grid.Column="1" Content="REINICIAR SERVICE" HorizontalAlignment="Stretch" Click="Restart_Click"/>
+        </Grid>
+        <Grid ColumnSpacing="10"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+          <Button Content="ABRIR LOGS" HorizontalAlignment="Stretch" Click="OpenLogs_Click"/>
+          <Button Grid.Column="1" Content="TEST PAIRING SYSTEM" HorizontalAlignment="Stretch" Click="TestPairing_Click"/>
+        </Grid>
+
+        <TextBlock Text="Dispositivos vinculados" FontSize="18" FontWeight="SemiBold" Margin="0,10,0,0"/>
+        <TextBlock x:Name="NoDevicesText" Text="Todavía no vinculaste ningún celular de casa." Opacity="0.7"/>
+        <StackPanel x:Name="DevicesPanel" Spacing="8"/>
+
+        <Expander Header="Configuración" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+          <StackPanel Spacing="10" Padding="0,10,0,0">
+            <NumberBox x:Name="PortBox" Header="API port" Minimum="1" Maximum="65535" SpinButtonPlacementMode="Inline"/>
+            <CheckBox x:Name="DiscoveryCheck" Content="Enable LAN discovery (UDP 8767)"/>
+            <TextBlock Text="Adaptador de red (LAN)" />
+            <ComboBox x:Name="AdapterCombo" HorizontalAlignment="Stretch" PlaceholderText="Automático (recomendado)"/>
+            <Button Content="SAVE CONFIGURATION" Click="SaveConfig_Click"/>
+            <Expander Header="Avanzado" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+              <StackPanel Spacing="10" Padding="0,10,0,0">
+                <TextBlock TextWrapping="Wrap" Opacity="0.7" Text="El Agent Token clásico ya no hace falta para vincular un celular nuevo. Se mantiene para compatibilidad con integraciones existentes."/>
+                <Button Content="COPY AGENT TOKEN" Click="CopyToken_Click"/>
+              </StackPanel>
+            </Expander>
+          </StackPanel>
+        </Expander>
+
+        <InfoBar x:Name="Feedback" IsOpen="False" IsClosable="True"/>
       </StackPanel>
-    </Expander>
-    <InfoBar x:Name="Feedback" IsOpen="False" IsClosable="True"/>
-  </StackPanel></ScrollViewer>
+    </ScrollViewer>
+
+    <Grid x:Name="PairingOverlay" Visibility="Collapsed" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">
+      <StackPanel Padding="28" Spacing="10" MaxWidth="420" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <TextBlock Text="Vincular celular de casa" FontSize="22" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+        <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="12" Padding="12" HorizontalAlignment="Center" Background="White">
+          <Image x:Name="QrImage" Width="260" Height="260"/>
+        </Border>
+        <TextBlock Text="Código de verificación:" HorizontalAlignment="Center" Opacity="0.7"/>
+        <TextBlock x:Name="DisplayCodeText" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center"/>
+        <TextBlock x:Name="ExpiryText" HorizontalAlignment="Center"/>
+        <TextBlock x:Name="PairingPcText" HorizontalAlignment="Center" Opacity="0.8"/>
+        <TextBlock x:Name="PairingNetworkText" HorizontalAlignment="Center" Opacity="0.8"/>
+        <Grid ColumnSpacing="10" Margin="0,8,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+          <Button Content="GENERAR OTRO CÓDIGO" HorizontalAlignment="Stretch" Click="RegenerateOffer_Click"/>
+          <Button Grid.Column="1" Content="COPIAR CÓDIGO" HorizontalAlignment="Stretch" Click="CopyCode_Click"/>
+        </Grid>
+        <Button Content="CANCELAR" HorizontalAlignment="Stretch" Click="CancelPairing_Click"/>
+      </StackPanel>
+    </Grid>
+  </Grid>
 </Window>

@@ -11,7 +11,13 @@ namespace MGGX.PCAgent.Control;
 public partial class App : Application
 {
     private Window? _window;
-    public App() => InitializeComponent();
+
+    public App()
+    {
+        InitializeComponent();
+        UnhandledException += (_, e) => { ReportStartupFailure(e.Exception); e.Handled = true; };
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => ReportStartupFailure(e.ExceptionObject as Exception ?? new Exception(e.ExceptionObject?.ToString()));
+    }
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
@@ -22,8 +28,27 @@ public partial class App : Application
             Exit();
             return;
         }
-        _window = new MainWindow();
-        _window.Activate();
+        try
+        {
+            _window = new MainWindow();
+            _window.Activate();
+        }
+        catch (Exception ex)
+        {
+            ReportStartupFailure(ex);
+        }
+    }
+
+    private static void ReportStartupFailure(Exception ex)
+    {
+        try
+        {
+            var logDir = Path.Combine(AgentConstants.DataDirectory, "logs");
+            Directory.CreateDirectory(logDir);
+            File.AppendAllText(Path.Combine(logDir, "control-crash.log"), $"{DateTimeOffset.UtcNow:O} {ex}\n\n");
+        }
+        catch { /* logging is best-effort; still show the dialog below */ }
+        MessageBox(IntPtr.Zero, LogSanitizer.Sanitize($"MGGX PC Agent could not start:\n\n{ex.Message}"), "MGGX PC Agent — Error", 0x10);
     }
 
     public static void LaunchElevated(string argument)

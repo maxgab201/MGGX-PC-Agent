@@ -8,6 +8,7 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>MGGX.PCAgent</AssemblyName>
+    <RootNamespace>MGGX.PCAgent.Control</RootNamespace>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
